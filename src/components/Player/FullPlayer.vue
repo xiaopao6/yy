@@ -11,6 +11,7 @@
       }"
       class="full-player"
       @mousemove="controlShowChange"
+      @mouseleave="closePlayerControlShow"
     >
       <!-- 遮罩 -->
       <Transition name="fade" mode="out-in">
@@ -48,13 +49,18 @@
         <div v-show="playerControlShow" class="menu">
           <div class="left">
             <!-- 歌词模式 -->
-            <div v-if="isHasLrc" class="n-icon" @click="pureLyricMode = !pureLyricMode">
-              <n-text>词</n-text>
-            </div>
+            <n-icon
+              v-if="isHasLrc"
+              :class="['lrc-open', { open: pureLyricMode }]"
+              size="28"
+              @click="pureLyricMode = !pureLyricMode"
+            >
+              <SvgIcon icon="lrc-text" />
+            </n-icon>
           </div>
           <div class="right">
             <!-- 全屏切换 -->
-            <n-icon @click.stop="screenfullChange">
+            <n-icon class="hidden" @click.stop="screenfullChange">
               <SvgIcon
                 :icon="screenfullStatus ? 'fullscreen-exit-rounded' : 'fullscreen-rounded'"
               />
@@ -76,7 +82,7 @@
             <!-- 封面 -->
             <PlayerCover />
             <!-- 信息 -->
-            <div v-if="playCoverType === 'cover' || !isHasLrc" :class="['data', playCoverType]">
+            <div v-show="playCoverType === 'cover' || !isHasLrc" :class="['data', playCoverType]">
               <div class="desc">
                 <div class="title">
                   <span class="name">{{ music.getPlaySongData.name || "未知曲目" }}</span>
@@ -225,7 +231,9 @@
         </div>
       </Transition>
       <!-- 控制中心 -->
-      <PlayerControl v-show="playerControlShow" />
+      <PlayerControl />
+      <!-- 音乐频谱 -->
+      <Spectrum v-if="showSpectrums" :show="!playerControlShow" :height="60" />
     </div>
   </Transition>
 </template>
@@ -242,7 +250,7 @@ const music = musicData();
 const status = siteStatus();
 const settings = siteSettings();
 const { playList, playSongLyric } = storeToRefs(music);
-const { playerBackgroundType, showYrc, playCoverType } = storeToRefs(settings);
+const { playerBackgroundType, showYrc, playCoverType, showSpectrums } = storeToRefs(settings);
 const {
   playerControlShow,
   controlTimeOut,
@@ -269,9 +277,16 @@ const screenfullChange = () => {
   }
 };
 
+// 关闭控制中心
+const closePlayerControlShow = () => {
+  if (window.innerWidth <= 700) return false;
+  playerControlShow.value = false;
+};
+
 // 控制中心显隐
 const controlShowChange = throttle(() => {
   playerControlShow.value = true;
+  if (window.innerWidth <= 700) return false;
   if (controlTimeOut.value) {
     clearTimeout(controlTimeOut.value);
   }
@@ -396,17 +411,6 @@ onUnmounted(() => {
       justify-content: flex-end;
       flex: 1;
     }
-    .left {
-      justify-content: flex-start;
-      .n-icon {
-        margin-left: 0;
-        margin-right: 12px;
-        .n-text {
-          font-size: 26px;
-          font-weight: bold;
-        }
-      }
-    }
     .n-icon {
       margin-left: 12px;
       width: 40px;
@@ -429,6 +433,17 @@ onUnmounted(() => {
       }
       &:active {
         transform: scale(1);
+      }
+    }
+    .left {
+      justify-content: flex-start;
+      .n-icon {
+        margin-left: 0;
+        &.lrc-open {
+          &.open {
+            opacity: 0.8;
+          }
+        }
       }
     }
   }
@@ -651,6 +666,41 @@ onUnmounted(() => {
     word-break: break-all;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 1;
+  }
+  @media (max-width: 700px) {
+    .menu {
+      .hidden {
+        display: none;
+      }
+    }
+    .main-player {
+      .content {
+        width: 100%;
+        .data {
+          display: block !important;
+          &.record {
+            margin-top: 0;
+          }
+        }
+        &.no-lrc {
+          transform: translateX(0);
+        }
+      }
+      .right {
+        display: none;
+        .data {
+          .name {
+            font-size: 24px;
+            .name-alias {
+              font-size: 16px;
+            }
+          }
+          .other {
+            font-size: 14px;
+          }
+        }
+      }
+    }
   }
 }
 // 局外样式

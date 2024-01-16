@@ -42,7 +42,7 @@ export default defineConfig(({ mode }) => {
       build: {
         rollupOptions: {
           input: {
-            index: resolve(__dirname, "electron/preload/index.js"),
+            index: resolve(__dirname, "electron/preload/index.mjs"),
           },
         },
       },
@@ -97,9 +97,9 @@ export default defineConfig(({ mode }) => {
             ],
           },
           manifest: {
-            name: loadEnv(mode, process.cwd()).RENDERER_VITE_SITE_TITLE,
-            short_name: loadEnv(mode, process.cwd()).RENDERER_VITE_SITE_TITLE,
-            description: loadEnv(mode, process.cwd()).RENDERER_VITE_SITE_DES,
+            name: getEnv("RENDERER_VITE_SITE_TITLE"),
+            short_name: getEnv("RENDERER_VITE_SITE_TITLE"),
+            description: getEnv("RENDERER_VITE_SITE_DES"),
             display: "standalone",
             start_url: "/",
             theme_color: "#fff",

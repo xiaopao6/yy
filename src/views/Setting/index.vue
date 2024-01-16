@@ -10,14 +10,14 @@
           </n-icon>
           <n-text class="author-text" depth="3">{{ packageJson.author }}</n-text>
         </div>
-        <n-text class="version" depth="3">v&nbsp;{{ packageJson.version }}</n-text>
+        <n-text class="version" depth="3">{{ packageJson.version }}</n-text>
       </div>
     </n-h1>
     <!-- 导航栏 -->
     <n-tabs
       ref="setTabsRef"
       v-model:value="setTabsValue"
-      type="line"
+      type="segment"
       @update:value="settingTabChange"
     >
       <n-tab name="setTab1"> 常规 </n-tab>
@@ -31,9 +31,7 @@
     <n-scrollbar
       ref="setScrollRef"
       :style="{
-        height: `calc(100vh - ${
-          Object.keys(music.getPlaySongData)?.length && showPlayBar ? 328 : 248
-        }px)`,
+        height: `calc(100vh - ${music.getPlaySongData?.id && showPlayBar ? 328 : 248}px)`,
       }"
       class="all-set"
       @scroll="allSetScroll"
@@ -79,8 +77,15 @@
           <n-switch v-model:value="showSider" :round="false" />
         </n-card>
         <n-card class="set-item">
+          <div class="name">
+            侧边栏展示封面
+            <n-text class="tip">侧边栏歌单是否展示歌单封面</n-text>
+          </div>
+          <n-switch v-model:value="siderShowCover" :disabled="!showSider" :round="false" />
+        </n-card>
+        <n-card class="set-item">
           <div class="name">显示搜索历史</div>
-          <n-switch v-model:value="searchHistory" :round="false" />
+          <n-switch v-model:value="showSearchHistory" :round="false" />
         </n-card>
         <n-card class="set-item">
           <div class="name">
@@ -191,7 +196,9 @@
       </div>
       <div v-else class="set-type">
         <n-h3 prefix="bar"> 系统 </n-h3>
-        <n-text>该设置项为桌面端独占功能</n-text>
+        <n-card class="set-item">
+          <div class="name">该设置项为桌面端独占功能</div>
+        </n-card>
       </div>
       <!-- 播放 -->
       <div class="set-type">
@@ -211,6 +218,13 @@
             <n-text v-if="autoPlay" class="tip"> 与自动播放相冲突，已禁用 </n-text>
           </div>
           <n-switch v-model:value="memorySeek" :disabled="autoPlay" :round="false" />
+        </n-card>
+        <n-card class="set-item">
+          <div class="name">
+            音乐资源自动缓存
+            <n-text class="tip"> 可能会造成加载缓慢，将在下一首播放或刷新时生效 </n-text>
+          </div>
+          <n-switch v-model:value="useMusicCache" :round="false" />
         </n-card>
         <n-card class="set-item">
           <div class="name">音乐渐入渐出</div>
@@ -273,8 +287,8 @@
                 playerBackgroundType === "animation"
                   ? "流体效果，较消耗性能，请谨慎开启"
                   : playerBackgroundType === "blur"
-                  ? "将封面模糊处理为背景"
-                  : "提取封面主色为渐变色"
+                    ? "将封面模糊处理为背景"
+                    : "提取封面主色为渐变色"
               }}
             </n-text>
           </div>
@@ -316,6 +330,29 @@
             :disabled="!checkPlatform.electron()"
             :round="false"
           />
+        </n-card>
+        <n-card class="set-item">
+          <div class="name">
+            <div class="dev">
+              显示音乐频谱
+              <n-tag :bordered="false" round size="small" type="warning">
+                开发中
+                <template #icon>
+                  <n-icon>
+                    <SvgIcon icon="code" />
+                  </n-icon>
+                </template>
+              </n-tag>
+            </div>
+            <n-text class="tip">
+              {{
+                showSpectrums
+                  ? "开启音乐频谱会极大影响性能，如遇问题请关闭"
+                  : "是否在播放器底部显示音乐频谱"
+              }}
+            </n-text>
+          </div>
+          <n-switch v-model:value="showSpectrums" :round="false" />
         </n-card>
       </div>
       <!-- 歌词 -->
@@ -401,7 +438,7 @@
         <n-card class="set-item">
           <div class="name">
             <div class="dev">
-              是否显示逐字歌词
+              显示逐字歌词
               <n-tag :bordered="false" round size="small" type="warning">
                 开发中
                 <template #icon>
@@ -418,7 +455,7 @@
         <n-card class="set-item">
           <div class="name">
             <div class="dev">
-              是否显示逐字歌词动画
+              显示逐字歌词动画
               <n-tag :bordered="false" round size="small" type="warning">
                 开发中
                 <template #icon>
@@ -462,7 +499,7 @@
             默认下载文件夹
             <n-text class="tip">{{ downloadPath || "不设置则会每次选择保存位置" }}</n-text>
           </div>
-          <n-space>
+          <n-flex>
             <Transition name="fade" mode="out-in">
               <n-button
                 v-if="downloadPath"
@@ -477,14 +514,29 @@
             <n-button :disabled="!checkPlatform.electron()" strong secondary @click="choosePath">
               更改
             </n-button>
-          </n-space>
+          </n-flex>
+        </n-card>
+        <n-card class="set-item">
+          <div class="name">
+            同时下载歌曲元信息
+            <n-text class="tip">为当前下载歌曲附加封面及歌词等元信息</n-text>
+          </div>
+          <n-switch v-model:value="downloadMeta" :round="false" />
+        </n-card>
+        <n-card class="set-item">
+          <div class="name">下载歌曲时同时下载封面</div>
+          <n-switch v-model:value="downloadCover" :disabled="!downloadMeta" :round="false" />
+        </n-card>
+        <n-card class="set-item">
+          <div class="name">下载歌曲时同时下载歌词</div>
+          <n-switch v-model:value="downloadLyrics" :disabled="!downloadMeta" :round="false" />
         </n-card>
       </div>
       <!-- 其他 -->
       <div class="set-type">
         <n-h3 prefix="bar"> 其他 </n-h3>
         <n-card class="set-item">
-          <div class="name">是否显示 GitHub 仓库按钮</div>
+          <div class="name">显示 GitHub 仓库按钮</div>
           <n-switch v-model:value="showGithub" :round="false" />
         </n-card>
         <n-card class="set-item">
@@ -562,7 +614,7 @@ const {
   lrcMousePause,
   lyricsFontSize,
   lyricsBlur,
-  searchHistory,
+  showSearchHistory,
   autoSignIn,
   bottomLyricShow,
   downloadPath,
@@ -571,6 +623,12 @@ const {
   playCoverType,
   playSearch,
   showPlaylistCount,
+  showSpectrums,
+  siderShowCover,
+  useMusicCache,
+  downloadMeta,
+  downloadCover,
+  downloadLyrics,
 } = storeToRefs(settings);
 
 // 标签页数据
@@ -719,6 +777,12 @@ const resetApp = () => {
         }
         .author-text {
           margin-left: 6px;
+        }
+      }
+      .version {
+        &::before {
+          content: "v";
+          margin-right: 2px;
         }
       }
     }

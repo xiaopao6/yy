@@ -72,7 +72,7 @@
           </n-ellipsis>
           <n-text v-else class="description">太懒了吧，连简介都没写</n-text>
           <!-- 数量 -->
-          <n-space class="num">
+          <n-flex class="num">
             <div v-if="djDetail?.count" class="num-item">
               <n-icon depth="3" size="18">
                 <SvgIcon icon="music-note" />
@@ -85,7 +85,7 @@
               </n-icon>
               <n-text depth="3">{{ getTimestampTime(djDetail.updateTime) }} 更新</n-text>
             </div>
-          </n-space>
+          </n-flex>
         </div>
       </div>
       <div v-else class="detail">
@@ -96,17 +96,18 @@
       </div>
     </Transition>
     <!-- 功能区 -->
-    <n-space class="menu" justify="space-between">
-      <n-space class="left">
+    <n-flex class="menu" justify="space-between">
+      <n-flex class="left">
         <n-button
           :disabled="djData === 'empty'"
+          :focusable="false"
           type="primary"
           class="play"
           tag="div"
           circle
           strong
           secondary
-          @click="playAllSongs"
+          @click="playAllSongs(djData, 'dj')"
         >
           <template #icon>
             <n-icon size="32">
@@ -114,7 +115,16 @@
             </n-icon>
           </template>
         </n-button>
-        <n-button size="large" tag="div" round strong secondary @click="likeOrDislike(djId)">
+        <n-button
+          :focusable="false"
+          class="like"
+          size="large"
+          tag="div"
+          round
+          strong
+          secondary
+          @click="likeOrDislike(djId)"
+        >
           <template #icon>
             <n-icon>
               <SvgIcon
@@ -125,7 +135,7 @@
           {{ isLikeOrDislike(djId) ? "订阅电台" : "取消订阅" }}
         </n-button>
         <n-dropdown :options="moreOptions" trigger="hover" placement="bottom-start">
-          <n-button size="large" tag="div" circle strong secondary>
+          <n-button :focusable="false" class="more" size="large" tag="div" circle strong secondary>
             <template #icon>
               <n-icon>
                 <SvgIcon icon="format-list-bulleted" />
@@ -133,8 +143,8 @@
             </template>
           </n-button>
         </n-dropdown>
-      </n-space>
-      <n-space class="right">
+      </n-flex>
+      <n-flex class="right">
         <!-- 模糊搜索 -->
         <Transition name="fade" mode="out-in">
           <n-input
@@ -153,8 +163,8 @@
             </template>
           </n-input>
         </Transition>
-      </n-space>
-    </n-space>
+      </n-flex>
+    </n-flex>
     <!-- 列表 -->
     <Transition name="fade" mode="out-in">
       <div v-if="djData !== 'empty'" class="list">
@@ -189,7 +199,9 @@
   </div>
   <div v-else class="title">
     <n-text class="key">参数不完整</n-text>
-    <n-button class="back" strong secondary @click="router.go(-1)"> 返回上一页 </n-button>
+    <n-button :focusable="false" class="back" strong secondary @click="router.go(-1)">
+      返回上一页
+    </n-button>
   </div>
 </template>
 
@@ -197,23 +209,21 @@
 import { NIcon } from "naive-ui";
 import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
-import { musicData, siteData, siteSettings } from "@/stores";
+import { siteData, siteSettings } from "@/stores";
 import { getDjDetail, getDjProgram, likeDj } from "@/api/dj";
 import { fuzzySearch } from "@/utils/helper";
 import { isLogin } from "@/utils/auth";
 import { getTimestampTime } from "@/utils/timeTools";
-import { fadePlayOrPause, initPlayer } from "@/utils/Player";
+import { playAllSongs } from "@/utils/Player";
 import debounce from "@/utils/debounce";
 import formatData from "@/utils/formatData";
 import SvgIcon from "@/components/Global/SvgIcon";
 
 const router = useRouter();
 const data = siteData();
-const music = musicData();
 const settings = siteSettings();
 const { userLikeData } = storeToRefs(data);
 const { loadSize } = storeToRefs(settings);
-const { playList, playIndex, playSongData, playHeartbeatMode, playMode } = storeToRefs(music);
 
 //  电台数据
 const djId = ref(router.currentRoute.value.query.id);
@@ -278,34 +288,6 @@ const getDjProgramData = async (id, limit = loadSize.value, offset = 0) => {
     console.error("获取电台节目错误：", error);
     $message.error("获取电台节目出现错误");
   }
-};
-
-// 播放电台全部节目
-const playAllSongs = async () => {
-  if (!djData.value) return false;
-  // 关闭心动模式
-  playHeartbeatMode.value = false;
-  // 更改模式和电台
-  playMode.value = "dj";
-  playList.value = djData.value.slice();
-  // 是否处于电台内
-  const songId = music.getPlaySongData?.id;
-  const existingIndex = djData.value.findIndex((song) => song.id === songId);
-  // 若不处于
-  if (existingIndex === -1 || !songId) {
-    console.log("不在电台内");
-    playSongData.value = djData.value[0];
-    playIndex.value = 0;
-    // 初始化播放器
-    await initPlayer(true);
-  } else {
-    console.log("处于电台内");
-    playSongData.value = djData.value[existingIndex];
-    playIndex.value = existingIndex;
-    // 播放
-    fadePlayOrPause();
-  }
-  $message.info("已开始播放", { showIcon: false });
 };
 
 // 节目模糊搜索
@@ -431,6 +413,7 @@ onMounted(async () => {
         font-size: 30px;
         font-weight: bold;
         margin-bottom: 12px;
+        -webkit-line-clamp: 2;
       }
       .creator {
         display: flex;
@@ -523,6 +506,81 @@ onMounted(async () => {
           background-color 0.3s;
         &.n-input--focus {
           width: 200px;
+        }
+      }
+    }
+  }
+  @media (max-width: 700px) {
+    .detail {
+      .cover {
+        width: 140px;
+        height: 140px;
+        min-width: 140px;
+      }
+      .data {
+        .name {
+          font-size: 20px;
+          margin-bottom: 4px;
+        }
+        .creator {
+          .n-avatar {
+            width: 20px;
+            height: 20px;
+            margin-right: 6px;
+          }
+          .nickname {
+            font-size: 12px;
+          }
+          .create-time {
+            margin-left: 6px;
+            font-size: 12px;
+          }
+        }
+        .tags {
+          .pl-tags {
+            font-size: 12px;
+            padding: 0 12px;
+          }
+        }
+        .num,
+        .description {
+          display: none !important;
+        }
+      }
+    }
+    .menu {
+      margin: 20px 0;
+      .left {
+        .play {
+          --n-width: 40px;
+          --n-height: 40px;
+          .n-icon {
+            font-size: 22px !important;
+          }
+        }
+        .like {
+          --n-height: 36px;
+          --n-font-size: 13px;
+          --n-padding: 0 16px;
+          --n-icon-size: 18px;
+          :deep(.n-button__icon) {
+            margin: 0;
+          }
+          :deep(.n-button__content) {
+            display: none;
+          }
+        }
+        .more {
+          --n-height: 36px;
+          --n-font-size: 13px;
+          --n-icon-size: 18px;
+        }
+      }
+      .right {
+        .search {
+          height: 36px;
+          width: 130px;
+          font-size: 13px;
         }
       }
     }

@@ -8,10 +8,11 @@ const useSiteSettingsStore = defineStore("siteSettings", {
       closeTip: true, // 关闭软件提醒弹窗
       closeType: "hide", // 关闭方式 close 直接关闭 / hide 最小化到任务栏
       showTaskbarProgress: false, // 显示歌曲任务栏进度
-      searchHistory: true, // 搜索历史
+      showSearchHistory: true, // 搜索历史
       autoSignIn: true, // 自动签到
       showGithub: true,
       showSider: true, // 显示侧边栏
+      siderShowCover: false, // 侧边栏显示封面
       // 主题部分
       themeType: "dark",
       themeAuto: false,
@@ -31,6 +32,8 @@ const useSiteSettingsStore = defineStore("siteSettings", {
       memorySeek: true, // 记忆上次播放位置
       playSearch: false, // 是否播放全部搜索结果
       showPlaylistCount: true, // 是否显示播放列表数量
+      showSpectrums: false, // 是否显示音乐频谱
+      useMusicCache: false, // 是否采用音乐缓存
       // 数量部分
       loadSize: 50, // 每页加载数量
       // 歌词部分
@@ -45,6 +48,9 @@ const useSiteSettingsStore = defineStore("siteSettings", {
       showRoma: true, // 是否显示歌词音译
       // 下载部分
       downloadPath: null, // 默认下载路径
+      downloadMeta: true, // 同时下载元信息
+      downloadCover: true, // 同时下载封面
+      downloadLyrics: true, // 同时下载歌词
     };
   },
   getters: {},
